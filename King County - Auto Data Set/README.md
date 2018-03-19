@@ -1,6 +1,6 @@
 # King County Home Sales: Detailed Analysis in R 
 
-####DataSet Source:  https://www.kaggle.com/harlfoxem/housesalesprediction/data
+### DataSet Source:  https://www.kaggle.com/harlfoxem/housesalesprediction/data
 
 This dataset contains house sale prices for <b>King County</b>, which includes Seattle. It includes homes sold between May 2014 and May 2015.It's a great dataset for evaluating simple regression models.
 About the Data Set:
