@@ -91,6 +91,4 @@ regTree <- rpart(price ~ .+ sqft_living + zipcode + waterfront + view + yr_built
 
 ## Acknowledgments
 
-* <a href="http://www.quora.com/Adam-DAngelo">Quora </a>
-* Inspiration
-* etc
+
