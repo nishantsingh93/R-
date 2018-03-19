@@ -1,0 +1,477 @@
+---
+title: "R Notebook"
+output: HW_ML
+---
+library(knitr)
+knit('HW_ML.Rmd', encoding = 'UTF-8')
+
+
+
+
+
+```{r}
+df <- read.csv('kc_house_data.csv',TRUE,',')
+head(df)
+```
+
+
+```{r}
+#creating yr & month columns
+df$Year <- substr(df$date, 0, 4)
+df$Month <- substr(df$date, 5, 6)
+df$date <- NULL
+head(df)
+```
+
+
+```{r}
+#NUmeric to factor conversion 
+#check if the houses have basement
+length(df$sqft_basement[df$sqft_basement == 0])
+
+# Encoding 0 for basement and 1 for no basement.
+df$sqft_basement[df$sqft_basement != 0] = 1
+df$sqft_basement = as.factor(df$sqft_basement)
+
+#To check if the houses have been renovated. 
+length(df$yr_renovated[df$yr_renovated == 0])
+# Encoding 0 for renovation and 1 for no renovation.
+df$zipcode <- as.factor(df$zipcode)
+df$bedrooms <- as.factor(df$bedrooms)
+df$waterfront <- as.factor(df$waterfront)
+df$yr_renovated[df$yr_renovated != 0] = 1
+df$yr_renovated = as.factor(df$yr_renovated)
+df$bathrooms <- as.factor(df$bathrooms)
+df$floors <- as.factor(df$floors)
+df$view <- as.factor(df$view)
+df$condition <- as.factor(df$condition)
+df$grade <- as.factor(df$grade)
+
+```
+
+
+```{r}
+#scaling
+library(MASS)
+ind <- sapply(df, is.numeric)
+df[ind] <- lapply(df[ind], scale)
+```
+
+
+
+```{r}
+set.seed(1)# for reproducible example
+
+# training set
+train <- sample(1:nrow(df),0.75*nrow(df))# random sample of 75% of data
+
+fit <- lm(price ~ + sqft_living + zipcode + waterfront + view + yr_built:yr_renovated + bedrooms:bathrooms + sqft_above + condition,data=df[train,])
+```
+
+```{r}
+test <- -train
+test.pred <- predict(fit,newdata=df[test,])
+test.y<- df[test,]$price
+
+SS.total<- sum((test.y - mean(test.y))^2)
+SS.residual<- sum((test.y - test.pred)^2)
+SS.regression <- sum((test.pred - mean(test.y))^2)
+SS.total - (SS.regression+SS.residual)
+# NOT the fraction of variability explained by the model
+test.rsq <- 1 - SS.residual/SS.total
+test.rsq
+```
+
+
+--------ridge------------------------------regression--------------------------------------------------------------
+
+```{r}
+library(ISLR)
+library(glmnet)
+library(dplyr)
+library(tidyr)
+x <- model.matrix(price~ +sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, df)
+
+y = df %>%
+  dplyr::select(price) %>%
+  unlist() %>%
+  as.numeric()
+lambda <- 10^seq(10, -2, length = 100)
+```
+
+
+```{r}
+set.seed(1)
+
+train = df %>%
+  sample_frac(0.5)
+
+test = df %>%
+  setdiff(train)
+
+x_train = model.matrix(price~+sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, train)[,-1]
+x_test = model.matrix(price~+sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, test)[,-1]
+
+y_train = train %>%
+  dplyr::select(price) %>%
+  unlist() %>%
+  as.numeric()
+
+y_test = test %>%
+  dplyr::select(price) %>%
+  unlist() %>%
+  as.numeric()
+```
+
+
+
+```{r}
+## fitting  ridge model on the training set, and evaluate its MSE on the test set, using  λ=4 . 
+
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda, thresh = 1e-12)
+ridge_pred = predict(ridge_mod, s = 4, newx = x_test)
+mean((ridge_pred - y_test)^2)
+
+mean((mean(y_train) - y_test)^2)
+```
+
+
+
+
+
+```{r}
+ridge_pred = predict(ridge_mod, s = 1e10, newx = x_test)
+mean((ridge_pred - y_test)^2)
+
+ridge_pred = predict(ridge_mod, s = 0, newx = x_test)
+mean((ridge_pred - y_test)^2)
+
+predict(ridge_mod, s = 0, type="coefficients")[1:20,]
+```
+
+
+```{r}
+plot(ridge_mod, xvar='lambda')
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(0,0,type='n',
+     ylim=range(ridge_mod$beta), ylab=expression(hat(beta)[lambda]),
+     xlim=log(range(ridge_mod$lambda)), xlab = expression(paste('log(',lambda,')')),
+     main = 'Shrinkage of Coefficients'
+)
+for(i in 1:nrow(ridge_mod$beta)){
+  lines(log(lambda),ridge_mod$beta[i,],col=i)
+}
+
+# Plot in-sample MSE by lambda
+MSE = ridge_mod$lambda * 0 # Initialize
+
+for(i in 1:ncol(ridge_mod$beta)){
+  MSE[i] = mean((y_train - ridge_mod$a0[i] - x_train%*%ridge_mod$beta[,i])^2)
+}
+plot(log(ridge_mod$lambda), MSE, type = 'l', col='blue', main = 'In-sample MSE', 
+     ylab= "MSE", xlab = expression(paste('log(',lambda,')')))
+abline(v=log(ridge_mod$lambda[which.min(MSE)]),col='red')
+```
+
+```{r}
+pred.ridge <- predict(ridge_mod, x_test)
+
+mse <- sqrt( apply((y_test-pred.ridge)^2, 2, mean) )
+plot(log(ridge_mod$lambda), mse, type="b", xlab="Log(lambda)")
+
+```
+
+
+
+```{r}
+lam.best_ridge <- ridge_mod$lambda[order(mse)[1]]
+lam.best_ridge
+```
+
+```{r}
+coef(ridge_mod, s=lam.best_ridge)
+```
+
+
+```{r}
+y_predicted <- predict(ridge_mod, s = lam.best_ridge, newx = x_test)
+
+# Sum of Squares Total and Error
+sst <- sum((y_test - mean(y_test))^2)
+sse <- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq_ridge <- 1 - sse / sst
+rsq_ridge
+```
+
+--------------------------------------------Lasso Regression-----------------------------------------------------
+
+```{r}
+lasso_mod = glmnet(x_train, 
+                   y_train, 
+                   alpha = 1, 
+                   lambda = lambda) # Fit lasso model on training data
+
+plot(lasso_mod) 
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(0,0,type='n',
+     ylim=range(lasso_mod$beta), ylab=expression(hat(beta)[lambda]),
+     xlim=log(range(lasso_mod$lambda)), xlab = expression(paste('log(',lambda,')')),
+     main = 'Shrinkage of Coefficients'
+)
+for(i in 1:nrow(lasso_mod$beta)){
+  lines(log(lambda),lasso_mod$beta[i,],col=i)
+}
+
+# Plot in-sample MSE by lambda
+MSE = lasso_mod$lambda * 0 # Initialize
+
+for(i in 1:ncol(lasso_mod$beta)){
+  MSE[i] = mean((y_train - lasso_mod$a0[i] - x_train%*%lasso_mod$beta[,i])^2)
+}
+plot(log(lasso_mod$lambda), MSE, type = 'l', col='blue', main = 'In-sample MSE', 
+     ylab= "MSE", xlab = expression(paste('log(',lambda,')')))
+abline(v=log(lasso_mod$lambda[which.min(MSE)]),col='red')
+```
+
+```{r}
+pred <- predict(lasso_mod, x_test)
+dim(pred)
+```
+
+
+```{r}
+mse <- sqrt( apply((y_test-pred)^2, 2, mean) )
+plot(log(lasso_mod$lambda), mse, type="b", xlab="Log(lambda)")
+```
+
+```{r}
+lam.best <- lasso_mod$lambda[order(mse)[1]]
+lam.best
+```
+
+```{r}
+coef(lasso_mod, s=lam.best)
+```
+
+
+
+```{r}
+y_predicted <- predict(lasso_mod, s = lam.best, newx = x_test)
+
+# Sum of Squares Total and Error
+sst <- sum((y_test - mean(y_test))^2)
+sse <- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq <- 1 - sse / sst
+rsq
+```
+> Compare your top 10 model from HW 2 with the Lasso model. Are there any variables that are removed from both models?
+> Solution: yr_built+bedrooms are removed from both the models making my efficency more than what was predicted in HW2
+
+
+> 4.Which model of these 3 would you choose and why? (Hint: Compare the 3 models against test data that it has not seen to compare performance)
+> Solution: I would choose ridge regression model because my r square value in the model is 0.81 where as in linear its at 0.78 and in lasso its 0.81. Hence the most efficent model would be the ridge regression model.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-------------------------------------------- Part 2----------------------------------------------------------------
+
+
+```{r}
+library(datasets)
+data(iris)
+str(iris)
+table(iris$Species)
+head(iris)
+```
+
+
+
+
+```{r}
+set.seed(9850)
+#generate random number from uniform distribution for 150 observations
+gp <- runif(nrow(iris))
+ir <- iris[order(gp),]
+head(ir,10)
+```
+
+
+
+
+
+```{r}
+#scaling 
+normalize <- function(x) {
+  return ((x - min(x) / max(x) - min(x)))
+  
+}
+irs <- as.data.frame(lapply(ir[,c(1,2,3,4)],normalize))
+summary(irs)
+```
+
+
+
+
+
+
+
+```{r}
+#test & train set 
+train <- irs[1:129,]
+test <- irs[130:150,]
+train1 <- ir[1:129, 5]
+test1<- ir[130:150, 5]
+```
+
+
+```{r}
+library(class)
+sqrt(150)
+```
+
+
+
+```{r}
+#Choose K in odd, so taken K =13
+knn_ml <- knn(train = train, test = test, cl= train1, k=13) 
+knn_ml
+```
+
+
+```{r}
+table(test1,knn_ml)
+```
+
+
+
+```{r}
+accuracy = mean(knn_ml == test1)
+accuracy
+```
+> model is 90.47% acurate.
+===================================================================================================================
+
+> PCA
+
+
+```{r}
+data(iris)
+head(iris, 3)
+
+# log transform 
+log.ir <- log(iris[, 1:4])
+ir.species <- iris[, 5]
+```
+
+
+```{r}
+
+#Center and scale the data
+ir.pca <- prcomp(log.ir,center = TRUE, scale. = TRUE) 
+
+Cov_data <- cov(log.ir )
+Eigen_data <- eigen(Cov_data)
+Eigen_data$values
+Eigen_data$vectors
+```
+
+
+```{r}
+# print method
+print(ir.pca)
+
+# plot method
+plot(ir.pca, type = "l")
+# summary method
+summary(ir.pca)
+
+# Predict PCs
+predict(ir.pca, newdata=tail(log.ir, 2))
+        
+
+```
+
+> The first eigenvalue (1.31) is much larger than the second (0.019), and so on…. The highest eigenvalues correspond to the first data principal components.  
+
+```{r}
+library(devtools)
+
+ 
+library(ggbiplot)
+g <- ggbiplot(ir.pca, obs.scale = 1, var.scale = 1, 
+              groups = ir.species, ellipse = TRUE, 
+              circle = TRUE)
+g <- g + scale_color_discrete(name = '')
+g <- g + theme(legend.direction = 'horizontal', 
+               legend.position = 'top')
+print(g)
+
+```
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+> 3.Re-run your model from part 1) on the dimensionally reduced dataset. What is the accuracy loss (if any) on this new model versus the model from part 1)
+
+
+-------------------------------------------------------------------------------------------------------------------
+```{r}
+#computing the new dataset 
+# Transpose eigeinvectors
+Eigen_data_t <- t(Eigen_data$vectors)
+# Transpose the adjusted data
+iris_n_t <- t(irs)
+# The new dataset
+irsn <- Eigen_data_t %*% iris_n_t
+# Transpose new data ad rename columns
+irsn <- t(irsn)
+colnames(irsn) <- c("PC1", "PC2", "PC3", "PC4")
+head(irsn)
+```
+
+```{r}
+train2 <- irsn[1:130,]
+test2 <- irsn[131:150,]
+train3 <- ir[1:130,5]
+test3 <- ir[131:150,5]
+
+
+require(class)
+model <- knn(train= train2,test=test2, cl= train3 ,k=13)
+```
+
+```{r}
+table(test3,model)
+```
+
+```{r}
+accuracy= mean( model == test3)
+accuracy
+```
+
+> Since the model is only 90% acurate whereas previously it was 90.47% accurates shows that after PCA the efficency of classifing by KNN has decreased.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>model is 90.47% acurate.</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<p>library(knitr)
+knit(&#39;HW_ML.Rmd&#39;, encoding = &#39;UTF-8&#39;)</p>
+
+<pre><code class="r">df &lt;- read.csv(&#39;kc_house_data.csv&#39;,TRUE,&#39;,&#39;)
+head(df)
+</code></pre>
+
+<pre><code>##           id            date   price bedrooms bathrooms sqft_living
+## 1 7129300520 20141013T000000  221900        3      1.00        1180
+## 2 6414100192 20141209T000000  538000        3      2.25        2570
+## 3 5631500400 20150225T000000  180000        2      1.00         770
+## 4 2487200875 20141209T000000  604000        4      3.00        1960
+## 5 1954400510 20150218T000000  510000        3      2.00        1680
+## 6 7237550310 20140512T000000 1225000        4      4.50        5420
+##   sqft_lot floors waterfront view condition grade sqft_above sqft_basement
+## 1     5650      1          0    0         3     7       1180             0
+## 2     7242      2          0    0         3     7       2170           400
+## 3    10000      1          0    0         3     6        770             0
+## 4     5000      1          0    0         5     7       1050           910
+## 5     8080      1          0    0         3     8       1680             0
+## 6   101930      1          0    0         3    11       3890          1530
+##   yr_built yr_renovated zipcode     lat     long sqft_living15 sqft_lot15
+## 1     1955            0   98178 47.5112 -122.257          1340       5650
+## 2     1951         1991   98125 47.7210 -122.319          1690       7639
+## 3     1933            0   98028 47.7379 -122.233          2720       8062
+## 4     1965            0   98136 47.5208 -122.393          1360       5000
+## 5     1987            0   98074 47.6168 -122.045          1800       7503
+## 6     2001            0   98053 47.6561 -122.005          4760     101930
+</code></pre>
+
+<pre><code class="r">#creating yr &amp; month columns
+df$Year &lt;- substr(df$date, 0, 4)
+df$Month &lt;- substr(df$date, 5, 6)
+df$date &lt;- NULL
+head(df)
+</code></pre>
+
+<pre><code>##           id   price bedrooms bathrooms sqft_living sqft_lot floors
+## 1 7129300520  221900        3      1.00        1180     5650      1
+## 2 6414100192  538000        3      2.25        2570     7242      2
+## 3 5631500400  180000        2      1.00         770    10000      1
+## 4 2487200875  604000        4      3.00        1960     5000      1
+## 5 1954400510  510000        3      2.00        1680     8080      1
+## 6 7237550310 1225000        4      4.50        5420   101930      1
+##   waterfront view condition grade sqft_above sqft_basement yr_built
+## 1          0    0         3     7       1180             0     1955
+## 2          0    0         3     7       2170           400     1951
+## 3          0    0         3     6        770             0     1933
+## 4          0    0         5     7       1050           910     1965
+## 5          0    0         3     8       1680             0     1987
+## 6          0    0         3    11       3890          1530     2001
+##   yr_renovated zipcode     lat     long sqft_living15 sqft_lot15 Year
+## 1            0   98178 47.5112 -122.257          1340       5650 2014
+## 2         1991   98125 47.7210 -122.319          1690       7639 2014
+## 3            0   98028 47.7379 -122.233          2720       8062 2015
+## 4            0   98136 47.5208 -122.393          1360       5000 2014
+## 5            0   98074 47.6168 -122.045          1800       7503 2015
+## 6            0   98053 47.6561 -122.005          4760     101930 2014
+##   Month
+## 1    10
+## 2    12
+## 3    02
+## 4    12
+## 5    02
+## 6    05
+</code></pre>
+
+<pre><code class="r">#NUmeric to factor conversion 
+#check if the houses have basement
+length(df$sqft_basement[df$sqft_basement == 0])
+</code></pre>
+
+<pre><code>## [1] 13126
+</code></pre>
+
+<pre><code class="r"># Encoding 0 for basement and 1 for no basement.
+df$sqft_basement[df$sqft_basement != 0] = 1
+df$sqft_basement = as.factor(df$sqft_basement)
+
+#To check if the houses have been renovated. 
+length(df$yr_renovated[df$yr_renovated == 0])
+</code></pre>
+
+<pre><code>## [1] 20699
+</code></pre>
+
+<pre><code class="r"># Encoding 0 for renovation and 1 for no renovation.
+df$zipcode &lt;- as.factor(df$zipcode)
+df$bedrooms &lt;- as.factor(df$bedrooms)
+df$waterfront &lt;- as.factor(df$waterfront)
+df$yr_renovated[df$yr_renovated != 0] = 1
+df$yr_renovated = as.factor(df$yr_renovated)
+df$bathrooms &lt;- as.factor(df$bathrooms)
+df$floors &lt;- as.factor(df$floors)
+df$view &lt;- as.factor(df$view)
+df$condition &lt;- as.factor(df$condition)
+df$grade &lt;- as.factor(df$grade)
+</code></pre>
+
+<pre><code class="r">#scaling
+library(MASS)
+ind &lt;- sapply(df, is.numeric)
+df[ind] &lt;- lapply(df[ind], scale)
+</code></pre>
+
+<pre><code class="r">set.seed(1)# for reproducible example
+
+# training set
+train &lt;- sample(1:nrow(df),0.75*nrow(df))# random sample of 75% of data
+
+fit &lt;- lm(price ~ + sqft_living + zipcode + waterfront + view + yr_built:yr_renovated + bedrooms:bathrooms + sqft_above + condition,data=df[train,])
+</code></pre>
+
+<pre><code class="r">test &lt;- -train
+test.pred &lt;- predict(fit,newdata=df[test,])
+</code></pre>
+
+<pre><code>## Warning in predict.lm(fit, newdata = df[test, ]): prediction from a rank-
+## deficient fit may be misleading
+</code></pre>
+
+<pre><code class="r">test.y&lt;- df[test,]$price
+
+SS.total&lt;- sum((test.y - mean(test.y))^2)
+SS.residual&lt;- sum((test.y - test.pred)^2)
+SS.regression &lt;- sum((test.pred - mean(test.y))^2)
+SS.total - (SS.regression+SS.residual)
+</code></pre>
+
+<pre><code>## [1] 222.5311
+</code></pre>
+
+<pre><code class="r"># NOT the fraction of variability explained by the model
+test.rsq &lt;- 1 - SS.residual/SS.total
+test.rsq
+</code></pre>
+
+<pre><code>## [1] 0.7790559
+</code></pre>
+
+<p>--------ridge------------------------------regression--------------------------------------------------------------</p>
+
+<pre><code class="r">library(ISLR)
+library(glmnet)
+library(dplyr)
+library(tidyr)
+x &lt;- model.matrix(price~ +sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, df)
+
+y = df %&gt;%
+  dplyr::select(price) %&gt;%
+  unlist() %&gt;%
+  as.numeric()
+lambda &lt;- 10^seq(10, -2, length = 100)
+</code></pre>
+
+<pre><code class="r">set.seed(1)
+
+train = df %&gt;%
+  sample_frac(0.5)
+
+test = df %&gt;%
+  setdiff(train)
+</code></pre>
+
+<pre><code>## Warning: Column `id` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `price` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `sqft_living` has different attributes on LHS and RHS of
+## join
+</code></pre>
+
+<pre><code>## Warning: Column `sqft_lot` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `sqft_above` has different attributes on LHS and RHS of
+## join
+</code></pre>
+
+<pre><code>## Warning: Column `yr_built` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `lat` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `long` has different attributes on LHS and RHS of join
+</code></pre>
+
+<pre><code>## Warning: Column `sqft_living15` has different attributes on LHS and RHS of
+## join
+</code></pre>
+
+<pre><code>## Warning: Column `sqft_lot15` has different attributes on LHS and RHS of
+## join
+</code></pre>
+
+<pre><code class="r">x_train = model.matrix(price~+sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, train)[,-1]
+x_test = model.matrix(price~+sqft_living + zipcode + waterfront + view + yr_built + bedrooms:bathrooms + sqft_above + grade + condition, test)[,-1]
+
+y_train = train %&gt;%
+  dplyr::select(price) %&gt;%
+  unlist() %&gt;%
+  as.numeric()
+
+y_test = test %&gt;%
+  dplyr::select(price) %&gt;%
+  unlist() %&gt;%
+  as.numeric()
+</code></pre>
+
+<pre><code class="r">## fitting  ridge model on the training set, and evaluate its MSE on the test set, using  λ=4 . 
+
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda, thresh = 1e-12)
+ridge_pred = predict(ridge_mod, s = 4, newx = x_test)
+mean((ridge_pred - y_test)^2)
+</code></pre>
+
+<pre><code>## [1] 0.5041041
+</code></pre>
+
+<pre><code class="r">mean((mean(y_train) - y_test)^2)
+</code></pre>
+
+<pre><code>## [1] 1.011353
+</code></pre>
+
+<pre><code class="r">ridge_pred = predict(ridge_mod, s = 1e10, newx = x_test)
+mean((ridge_pred - y_test)^2)
+</code></pre>
+
+<pre><code>## [1] 1.011353
+</code></pre>
+
+<pre><code class="r">ridge_pred = predict(ridge_mod, s = 0, newx = x_test)
+mean((ridge_pred - y_test)^2)
+</code></pre>
+
+<pre><code>## [1] 0.1875805
+</code></pre>
+
+<pre><code class="r">predict(ridge_mod, s = 0, type=&quot;coefficients&quot;)[1:20,]
+</code></pre>
+
+<pre><code>##  (Intercept)  sqft_living zipcode98002 zipcode98003 zipcode98004 
+##  -0.40381589   0.27338630  -0.18314312  -0.18694436   1.77407951 
+## zipcode98005 zipcode98006 zipcode98007 zipcode98008 zipcode98010 
+##   0.66188758   0.57199883   0.52430033   0.47221447   0.01258396 
+## zipcode98011 zipcode98014 zipcode98019 zipcode98022 zipcode98023 
+##   0.23040711   0.11035467   0.08712158  -0.17440729  -0.27091923 
+## zipcode98024 zipcode98027 zipcode98028 zipcode98029 zipcode98030 
+##   0.30140463   0.28591567   0.20333835   0.41448183  -0.14853023
+</code></pre>
+
+<pre><code class="r">plot(ridge_mod, xvar=&#39;lambda&#39;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-130-1.png" alt="plot of chunk unnamed-chunk-130"></p>
+
+<pre><code class="r">par(mfrow=c(1,2))
+plot(0,0,type=&#39;n&#39;,
+     ylim=range(ridge_mod$beta), ylab=expression(hat(beta)[lambda]),
+     xlim=log(range(ridge_mod$lambda)), xlab = expression(paste(&#39;log(&#39;,lambda,&#39;)&#39;)),
+     main = &#39;Shrinkage of Coefficients&#39;
+)
+for(i in 1:nrow(ridge_mod$beta)){
+  lines(log(lambda),ridge_mod$beta[i,],col=i)
+}
+
+# Plot in-sample MSE by lambda
+MSE = ridge_mod$lambda * 0 # Initialize
+
+for(i in 1:ncol(ridge_mod$beta)){
+  MSE[i] = mean((y_train - ridge_mod$a0[i] - x_train%*%ridge_mod$beta[,i])^2)
+}
+plot(log(ridge_mod$lambda), MSE, type = &#39;l&#39;, col=&#39;blue&#39;, main = &#39;In-sample MSE&#39;, 
+     ylab= &quot;MSE&quot;, xlab = expression(paste(&#39;log(&#39;,lambda,&#39;)&#39;)))
+abline(v=log(ridge_mod$lambda[which.min(MSE)]),col=&#39;red&#39;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-131-1.png" alt="plot of chunk unnamed-chunk-131"></p>
+
+<pre><code class="r">pred.ridge &lt;- predict(ridge_mod, x_test)
+
+mse &lt;- sqrt( apply((y_test-pred.ridge)^2, 2, mean) )
+plot(log(ridge_mod$lambda), mse, type=&quot;b&quot;, xlab=&quot;Log(lambda)&quot;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-132-1.png" alt="plot of chunk unnamed-chunk-132"></p>
+
+<pre><code class="r">lam.best_ridge &lt;- ridge_mod$lambda[order(mse)[1]]
+lam.best_ridge
+</code></pre>
+
+<pre><code>## [1] 0.01
+</code></pre>
+
+<pre><code class="r">coef(ridge_mod, s=lam.best_ridge)
+</code></pre>
+
+<pre><code>## 483 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                     1
+## (Intercept)              -0.403815888
+## sqft_living               0.273386297
+## zipcode98002             -0.183143117
+## zipcode98003             -0.186944361
+## zipcode98004              1.774079505
+## zipcode98005              0.661887581
+## zipcode98006              0.571998829
+## zipcode98007              0.524300329
+## zipcode98008              0.472214466
+## zipcode98010              0.012583960
+## zipcode98011              0.230407110
+## zipcode98014              0.110354667
+## zipcode98019              0.087121584
+## zipcode98022             -0.174407289
+## zipcode98023             -0.270919227
+## zipcode98024              0.301404634
+## zipcode98027              0.285915667
+## zipcode98028              0.203338351
+## zipcode98029              0.414481830
+## zipcode98030             -0.148530235
+## zipcode98031             -0.120101289
+## zipcode98032             -0.186322007
+## zipcode98033              0.794460179
+## zipcode98034              0.364417362
+## zipcode98038             -0.049077673
+## zipcode98039              2.963152864
+## zipcode98040              1.142839261
+## zipcode98042             -0.130158939
+## zipcode98045              0.093526969
+## zipcode98052              0.500489345
+## zipcode98053              0.455395932
+## zipcode98055             -0.042838923
+## zipcode98056              0.065373521
+## zipcode98058             -0.091442280
+## zipcode98059              0.071037353
+## zipcode98065              0.130113334
+## zipcode98070             -0.091485928
+## zipcode98072              0.299426133
+## zipcode98074              0.331955109
+## zipcode98075              0.333208069
+## zipcode98077              0.173529149
+## zipcode98092             -0.208036098
+## zipcode98102              1.026126526
+## zipcode98103              0.673008122
+## zipcode98105              1.082660990
+## zipcode98106              0.127686719
+## zipcode98107              0.696221630
+## zipcode98108              0.113805463
+## zipcode98109              1.126826186
+## zipcode98112              1.436252884
+## zipcode98115              0.676827540
+## zipcode98116              0.559759594
+## zipcode98117              0.639597992
+## zipcode98118              0.234174102
+## zipcode98119              1.069108452
+## zipcode98122              0.735577170
+## zipcode98125              0.356373354
+## zipcode98126              0.290324550
+## zipcode98133              0.229642615
+## zipcode98136              0.419786260
+## zipcode98144              0.565660548
+## zipcode98146              0.063341999
+## zipcode98148             -0.005004790
+## zipcode98155              0.185881559
+## zipcode98166             -0.003834724
+## zipcode98168             -0.050007689
+## zipcode98177              0.438708632
+## zipcode98178             -0.111062843
+## zipcode98188             -0.121089344
+## zipcode98198             -0.137332843
+## zipcode98199              0.923404591
+## waterfront1               1.152504267
+## view1                     0.230993574
+## view2                     0.212174572
+## view3                     0.421935092
+## view4                     0.989061986
+## yr_built                 -0.039047111
+## sqft_above                0.087355724
+## grade3                   -0.035759706
+## grade4                   -0.194618365
+## grade5                   -0.228030352
+## grade6                   -0.205651793
+## grade7                   -0.157771105
+## grade8                   -0.063013018
+## grade9                    0.157991746
+## grade10                   0.480546952
+## grade11                   0.992576028
+## grade12                   1.933166580
+## grade13                   3.204944725
+## condition2                0.036989489
+## condition3                0.030383033
+## condition4                0.096592564
+## condition5                0.217580516
+## bedrooms0:bathrooms0     -0.427277222
+## bedrooms1:bathrooms0      0.137191418
+## bedrooms2:bathrooms0      .          
+## bedrooms3:bathrooms0      .          
+## bedrooms4:bathrooms0      .          
+## bedrooms5:bathrooms0      .          
+## bedrooms6:bathrooms0      .          
+## bedrooms7:bathrooms0      .          
+## bedrooms8:bathrooms0      .          
+## bedrooms9:bathrooms0      .          
+## bedrooms10:bathrooms0     .          
+## bedrooms11:bathrooms0     .          
+## bedrooms33:bathrooms0     .          
+## bedrooms0:bathrooms0.5    .          
+## bedrooms1:bathrooms0.5   -0.075039677
+## bedrooms2:bathrooms0.5   -0.270161510
+## bedrooms3:bathrooms0.5    .          
+## bedrooms4:bathrooms0.5   -0.061078904
+## bedrooms5:bathrooms0.5    .          
+## bedrooms6:bathrooms0.5    .          
+## bedrooms7:bathrooms0.5    .          
+## bedrooms8:bathrooms0.5    .          
+## bedrooms9:bathrooms0.5    .          
+## bedrooms10:bathrooms0.5   .          
+## bedrooms11:bathrooms0.5   .          
+## bedrooms33:bathrooms0.5   .          
+## bedrooms0:bathrooms0.75   0.599696359
+## bedrooms1:bathrooms0.75   0.171356617
+## bedrooms2:bathrooms0.75  -0.040365108
+## bedrooms3:bathrooms0.75  -0.217430874
+## bedrooms4:bathrooms0.75  -0.928699300
+## bedrooms5:bathrooms0.75   .          
+## bedrooms6:bathrooms0.75   .          
+## bedrooms7:bathrooms0.75   .          
+## bedrooms8:bathrooms0.75   .          
+## bedrooms9:bathrooms0.75   .          
+## bedrooms10:bathrooms0.75  .          
+## bedrooms11:bathrooms0.75  .          
+## bedrooms33:bathrooms0.75  .          
+## bedrooms0:bathrooms1      .          
+## bedrooms1:bathrooms1     -0.022006785
+## bedrooms2:bathrooms1     -0.006614968
+## bedrooms3:bathrooms1     -0.008714782
+## bedrooms4:bathrooms1     -0.030562708
+## bedrooms5:bathrooms1      0.019889624
+## bedrooms6:bathrooms1      0.148419992
+## bedrooms7:bathrooms1      .          
+## bedrooms8:bathrooms1      .          
+## bedrooms9:bathrooms1      .          
+## bedrooms10:bathrooms1     .          
+## bedrooms11:bathrooms1     .          
+## bedrooms33:bathrooms1     .          
+## bedrooms0:bathrooms1.25   .          
+## bedrooms1:bathrooms1.25  -0.044645673
+## bedrooms2:bathrooms1.25  -0.258782614
+## bedrooms3:bathrooms1.25  -0.013178418
+## bedrooms4:bathrooms1.25   .          
+## bedrooms5:bathrooms1.25   .          
+## bedrooms6:bathrooms1.25   .          
+## bedrooms7:bathrooms1.25   .          
+## bedrooms8:bathrooms1.25   .          
+## bedrooms9:bathrooms1.25   .          
+## bedrooms10:bathrooms1.25  .          
+## bedrooms11:bathrooms1.25  .          
+## bedrooms33:bathrooms1.25  .          
+## bedrooms0:bathrooms1.5    .          
+## bedrooms1:bathrooms1.5   -0.248074615
+## bedrooms2:bathrooms1.5   -0.050582407
+## bedrooms3:bathrooms1.5   -0.026404680
+## bedrooms4:bathrooms1.5   -0.047717269
+## bedrooms5:bathrooms1.5   -0.089377939
+## bedrooms6:bathrooms1.5   -0.505787875
+## bedrooms7:bathrooms1.5   -0.504289066
+## bedrooms8:bathrooms1.5    .          
+## bedrooms9:bathrooms1.5    .          
+## bedrooms10:bathrooms1.5   .          
+## bedrooms11:bathrooms1.5   .          
+## bedrooms33:bathrooms1.5   .          
+## bedrooms0:bathrooms1.75   .          
+## bedrooms1:bathrooms1.75   0.269238256
+## bedrooms2:bathrooms1.75  -0.076320752
+## bedrooms3:bathrooms1.75   0.010837992
+## bedrooms4:bathrooms1.75  -0.073101815
+## bedrooms5:bathrooms1.75  -0.089119102
+## bedrooms6:bathrooms1.75  -0.081386995
+## bedrooms7:bathrooms1.75   .          
+## bedrooms8:bathrooms1.75   .          
+## bedrooms9:bathrooms1.75   .          
+## bedrooms10:bathrooms1.75  .          
+## bedrooms11:bathrooms1.75  .          
+## bedrooms33:bathrooms1.75  .          
+## bedrooms0:bathrooms2      .          
+## bedrooms1:bathrooms2     -0.187829604
+## bedrooms2:bathrooms2     -0.025216843
+## bedrooms3:bathrooms2      0.001647178
+## bedrooms4:bathrooms2     -0.080926908
+## bedrooms5:bathrooms2     -0.131121535
+## bedrooms6:bathrooms2     -0.131606791
+## bedrooms7:bathrooms2      .          
+## bedrooms8:bathrooms2      .          
+## bedrooms9:bathrooms2      .          
+## bedrooms10:bathrooms2    -0.405157335
+## bedrooms11:bathrooms2     .          
+## bedrooms33:bathrooms2     .          
+## bedrooms0:bathrooms2.25   .          
+## bedrooms1:bathrooms2.25  -0.125557097
+## bedrooms2:bathrooms2.25  -0.053180709
+## bedrooms3:bathrooms2.25   0.021749585
+## bedrooms4:bathrooms2.25   0.016435802
+## bedrooms5:bathrooms2.25   0.005230688
+## bedrooms6:bathrooms2.25  -0.084996318
+## bedrooms7:bathrooms2.25  -0.195301748
+## bedrooms8:bathrooms2.25   .          
+## bedrooms9:bathrooms2.25   .          
+## bedrooms10:bathrooms2.25  .          
+## bedrooms11:bathrooms2.25  .          
+## bedrooms33:bathrooms2.25  .          
+## bedrooms0:bathrooms2.5   -0.034966032
+## bedrooms1:bathrooms2.5    .          
+## bedrooms2:bathrooms2.5    0.005865485
+## bedrooms3:bathrooms2.5   -0.006237112
+## bedrooms4:bathrooms2.5   -0.036810765
+## bedrooms5:bathrooms2.5   -0.102604776
+## bedrooms6:bathrooms2.5   -0.181392626
+## bedrooms7:bathrooms2.5   -0.135975201
+## bedrooms8:bathrooms2.5    .          
+## bedrooms9:bathrooms2.5    .          
+## bedrooms10:bathrooms2.5   .          
+## bedrooms11:bathrooms2.5   .          
+## bedrooms33:bathrooms2.5   .          
+## bedrooms0:bathrooms2.75   .          
+## bedrooms1:bathrooms2.75   .          
+## bedrooms2:bathrooms2.75  -0.277335738
+## bedrooms3:bathrooms2.75  -0.001047690
+## bedrooms4:bathrooms2.75   0.016436072
+## bedrooms5:bathrooms2.75  -0.019486934
+## bedrooms6:bathrooms2.75  -0.043122191
+## bedrooms7:bathrooms2.75  -0.384587026
+## bedrooms8:bathrooms2.75   0.770782048
+## bedrooms9:bathrooms2.75   .          
+## bedrooms10:bathrooms2.75  .          
+## bedrooms11:bathrooms2.75  .          
+## bedrooms33:bathrooms2.75  .          
+## bedrooms0:bathrooms3      .          
+## bedrooms1:bathrooms3      .          
+## bedrooms2:bathrooms3     -0.121084508
+## bedrooms3:bathrooms3      0.005432814
+## bedrooms4:bathrooms3      0.041744003
+## bedrooms5:bathrooms3      0.076998075
+## bedrooms6:bathrooms3      0.066133067
+## bedrooms7:bathrooms3     -0.311081406
+## bedrooms8:bathrooms3     -0.292968318
+## bedrooms9:bathrooms3     -0.722011454
+## bedrooms10:bathrooms3     .          
+## bedrooms11:bathrooms3    -0.059462635
+## bedrooms33:bathrooms3     .          
+## bedrooms0:bathrooms3.25   .          
+## bedrooms1:bathrooms3.25   .          
+## bedrooms2:bathrooms3.25   0.328844057
+## bedrooms3:bathrooms3.25  -0.004260527
+## bedrooms4:bathrooms3.25   0.254434412
+## bedrooms5:bathrooms3.25   0.179935131
+## bedrooms6:bathrooms3.25  -0.050742585
+## bedrooms7:bathrooms3.25   .          
+## bedrooms8:bathrooms3.25   .          
+## bedrooms9:bathrooms3.25   .          
+## bedrooms10:bathrooms3.25  .          
+## bedrooms11:bathrooms3.25  .          
+## bedrooms33:bathrooms3.25  .          
+## bedrooms0:bathrooms3.5    .          
+## bedrooms1:bathrooms3.5    .          
+## bedrooms2:bathrooms3.5   -0.319172783
+## bedrooms3:bathrooms3.5    0.051404677
+## bedrooms4:bathrooms3.5    0.042364380
+## bedrooms5:bathrooms3.5   -0.070208843
+## bedrooms6:bathrooms3.5    0.131011750
+## bedrooms7:bathrooms3.5    0.019881431
+## bedrooms8:bathrooms3.5    .          
+## bedrooms9:bathrooms3.5    .          
+## bedrooms10:bathrooms3.5   .          
+## bedrooms11:bathrooms3.5   .          
+## bedrooms33:bathrooms3.5   .          
+## bedrooms0:bathrooms3.75   .          
+## bedrooms1:bathrooms3.75   .          
+## bedrooms2:bathrooms3.75   .          
+## bedrooms3:bathrooms3.75   0.053779936
+## bedrooms4:bathrooms3.75   0.381735931
+## bedrooms5:bathrooms3.75   0.112739123
+## bedrooms6:bathrooms3.75  -0.184243977
+## bedrooms7:bathrooms3.75  -0.412199055
+## bedrooms8:bathrooms3.75   .          
+## bedrooms9:bathrooms3.75   .          
+## bedrooms10:bathrooms3.75  .          
+## bedrooms11:bathrooms3.75  .          
+## bedrooms33:bathrooms3.75  .          
+## bedrooms0:bathrooms4      .          
+## bedrooms1:bathrooms4      .          
+## bedrooms2:bathrooms4      .          
+## bedrooms3:bathrooms4     -0.115006795
+## bedrooms4:bathrooms4      0.278546793
+## bedrooms5:bathrooms4      0.181984218
+## bedrooms6:bathrooms4     -0.077191641
+## bedrooms7:bathrooms4     -0.213389053
+## bedrooms8:bathrooms4      .          
+## bedrooms9:bathrooms4     -0.405587589
+## bedrooms10:bathrooms4     .          
+## bedrooms11:bathrooms4     .          
+## bedrooms33:bathrooms4     .          
+## bedrooms0:bathrooms4.25   .          
+## bedrooms1:bathrooms4.25   .          
+## bedrooms2:bathrooms4.25   .          
+## bedrooms3:bathrooms4.25   1.007203188
+## bedrooms4:bathrooms4.25   0.506568675
+## bedrooms5:bathrooms4.25   0.184084723
+## bedrooms6:bathrooms4.25   0.172950625
+## bedrooms7:bathrooms4.25   0.357202168
+## bedrooms8:bathrooms4.25   .          
+## bedrooms9:bathrooms4.25   .          
+## bedrooms10:bathrooms4.25  .          
+## bedrooms11:bathrooms4.25  .          
+## bedrooms33:bathrooms4.25  .          
+## bedrooms0:bathrooms4.5    .          
+## bedrooms1:bathrooms4.5    .          
+## bedrooms2:bathrooms4.5    .          
+## bedrooms3:bathrooms4.5    1.143011792
+## bedrooms4:bathrooms4.5    0.242776910
+## bedrooms5:bathrooms4.5   -0.038519452
+## bedrooms6:bathrooms4.5    0.217087040
+## bedrooms7:bathrooms4.5   -0.387045907
+## bedrooms8:bathrooms4.5    .          
+## bedrooms9:bathrooms4.5    .          
+## bedrooms10:bathrooms4.5   .          
+## bedrooms11:bathrooms4.5   .          
+## bedrooms33:bathrooms4.5   .          
+## bedrooms0:bathrooms4.75   .          
+## bedrooms1:bathrooms4.75   .          
+## bedrooms2:bathrooms4.75   .          
+## bedrooms3:bathrooms4.75   .          
+## bedrooms4:bathrooms4.75   1.174254329
+## bedrooms5:bathrooms4.75   1.395499297
+## bedrooms6:bathrooms4.75   .          
+## bedrooms7:bathrooms4.75   .          
+## bedrooms8:bathrooms4.75   .          
+## bedrooms9:bathrooms4.75   .          
+## bedrooms10:bathrooms4.75  .          
+## bedrooms11:bathrooms4.75  .          
+## bedrooms33:bathrooms4.75  .          
+## bedrooms0:bathrooms5      .          
+## bedrooms1:bathrooms5      .          
+## bedrooms2:bathrooms5      .          
+## bedrooms3:bathrooms5      .          
+## bedrooms4:bathrooms5      0.809403884
+## bedrooms5:bathrooms5      0.947762247
+## bedrooms6:bathrooms5      0.518699316
+## bedrooms7:bathrooms5      .          
+## bedrooms8:bathrooms5     -0.618796411
+## bedrooms9:bathrooms5      .          
+## bedrooms10:bathrooms5     .          
+## bedrooms11:bathrooms5     .          
+## bedrooms33:bathrooms5     .          
+## bedrooms0:bathrooms5.25   .          
+## bedrooms1:bathrooms5.25   .          
+## bedrooms2:bathrooms5.25   .          
+## bedrooms3:bathrooms5.25   .          
+## bedrooms4:bathrooms5.25   0.765121988
+## bedrooms5:bathrooms5.25   3.205411108
+## bedrooms6:bathrooms5.25  -0.172230315
+## bedrooms7:bathrooms5.25   .          
+## bedrooms8:bathrooms5.25   .          
+## bedrooms9:bathrooms5.25   .          
+## bedrooms10:bathrooms5.25 -0.879164278
+## bedrooms11:bathrooms5.25  .          
+## bedrooms33:bathrooms5.25  .          
+## bedrooms0:bathrooms5.5    .          
+## bedrooms1:bathrooms5.5    .          
+## bedrooms2:bathrooms5.5    .          
+## bedrooms3:bathrooms5.5    .          
+## bedrooms4:bathrooms5.5    0.800872042
+## bedrooms5:bathrooms5.5   -0.172087190
+## bedrooms6:bathrooms5.5    .          
+## bedrooms7:bathrooms5.5   -0.410476088
+## bedrooms8:bathrooms5.5    .          
+## bedrooms9:bathrooms5.5    .          
+## bedrooms10:bathrooms5.5   .          
+## bedrooms11:bathrooms5.5   .          
+## bedrooms33:bathrooms5.5   .          
+## bedrooms0:bathrooms5.75   .          
+## bedrooms1:bathrooms5.75   .          
+## bedrooms2:bathrooms5.75   .          
+## bedrooms3:bathrooms5.75   .          
+## bedrooms4:bathrooms5.75  -1.138558033
+## bedrooms5:bathrooms5.75   5.307786086
+## bedrooms6:bathrooms5.75   .          
+## bedrooms7:bathrooms5.75   .          
+## bedrooms8:bathrooms5.75   .          
+## bedrooms9:bathrooms5.75   .          
+## bedrooms10:bathrooms5.75  .          
+## bedrooms11:bathrooms5.75  .          
+## bedrooms33:bathrooms5.75  .          
+## bedrooms0:bathrooms6      .          
+## bedrooms1:bathrooms6      .          
+## bedrooms2:bathrooms6      .          
+## bedrooms3:bathrooms6      .          
+## bedrooms4:bathrooms6      .          
+## bedrooms5:bathrooms6     -3.942631931
+## bedrooms6:bathrooms6      6.100753510
+## bedrooms7:bathrooms6      .          
+## bedrooms8:bathrooms6      .          
+## bedrooms9:bathrooms6      .          
+## bedrooms10:bathrooms6     .          
+## bedrooms11:bathrooms6     .          
+## bedrooms33:bathrooms6     .          
+## bedrooms0:bathrooms6.25   .          
+## bedrooms1:bathrooms6.25   .          
+## bedrooms2:bathrooms6.25   .          
+## bedrooms3:bathrooms6.25   .          
+## bedrooms4:bathrooms6.25   .          
+## bedrooms5:bathrooms6.25   1.806988018
+## bedrooms6:bathrooms6.25   .          
+## bedrooms7:bathrooms6.25   .          
+## bedrooms8:bathrooms6.25   .          
+## bedrooms9:bathrooms6.25   .          
+## bedrooms10:bathrooms6.25  .          
+## bedrooms11:bathrooms6.25  .          
+## bedrooms33:bathrooms6.25  .          
+## bedrooms0:bathrooms6.5    .          
+## bedrooms1:bathrooms6.5    .          
+## bedrooms2:bathrooms6.5    .          
+## bedrooms3:bathrooms6.5    .          
+## bedrooms4:bathrooms6.5    .          
+## bedrooms5:bathrooms6.5    .          
+## bedrooms6:bathrooms6.5   -0.720410918
+## bedrooms7:bathrooms6.5    .          
+## bedrooms8:bathrooms6.5    .          
+## bedrooms9:bathrooms6.5    .          
+## bedrooms10:bathrooms6.5   .          
+## bedrooms11:bathrooms6.5   .          
+## bedrooms33:bathrooms6.5   .          
+## bedrooms0:bathrooms6.75   .          
+## bedrooms1:bathrooms6.75   .          
+## bedrooms2:bathrooms6.75   .          
+## bedrooms3:bathrooms6.75   .          
+## bedrooms4:bathrooms6.75   .          
+## bedrooms5:bathrooms6.75   .          
+## bedrooms6:bathrooms6.75   .          
+## bedrooms7:bathrooms6.75  -2.077212471
+## bedrooms8:bathrooms6.75   .          
+## bedrooms9:bathrooms6.75   .          
+## bedrooms10:bathrooms6.75  .          
+## bedrooms11:bathrooms6.75  .          
+## bedrooms33:bathrooms6.75  .          
+## bedrooms0:bathrooms7.5    .          
+## bedrooms1:bathrooms7.5    .          
+## bedrooms2:bathrooms7.5    .          
+## bedrooms3:bathrooms7.5    .          
+## bedrooms4:bathrooms7.5    .          
+## bedrooms5:bathrooms7.5    .          
+## bedrooms6:bathrooms7.5    .          
+## bedrooms7:bathrooms7.5    .          
+## bedrooms8:bathrooms7.5    .          
+## bedrooms9:bathrooms7.5   -1.060952123
+## bedrooms10:bathrooms7.5   .          
+## bedrooms11:bathrooms7.5   .          
+## bedrooms33:bathrooms7.5   .          
+## bedrooms0:bathrooms7.75   .          
+## bedrooms1:bathrooms7.75   .          
+## bedrooms2:bathrooms7.75   .          
+## bedrooms3:bathrooms7.75   .          
+## bedrooms4:bathrooms7.75   .          
+## bedrooms5:bathrooms7.75   .          
+## bedrooms6:bathrooms7.75   7.393619648
+## bedrooms7:bathrooms7.75   .          
+## bedrooms8:bathrooms7.75   .          
+## bedrooms9:bathrooms7.75   .          
+## bedrooms10:bathrooms7.75  .          
+## bedrooms11:bathrooms7.75  .          
+## bedrooms33:bathrooms7.75  .          
+## bedrooms0:bathrooms8      .          
+## bedrooms1:bathrooms8      .          
+## bedrooms2:bathrooms8      .          
+## bedrooms3:bathrooms8      .          
+## bedrooms4:bathrooms8      .          
+## bedrooms5:bathrooms8      .          
+## bedrooms6:bathrooms8     11.279096602
+## bedrooms7:bathrooms8     -2.418651927
+## bedrooms8:bathrooms8      .          
+## bedrooms9:bathrooms8      .          
+## bedrooms10:bathrooms8     .          
+## bedrooms11:bathrooms8     .          
+## bedrooms33:bathrooms8     .
+</code></pre>
+
+<pre><code class="r">y_predicted &lt;- predict(ridge_mod, s = lam.best_ridge, newx = x_test)
+
+# Sum of Squares Total and Error
+sst &lt;- sum((y_test - mean(y_test))^2)
+sse &lt;- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq_ridge &lt;- 1 - sse / sst
+rsq_ridge
+</code></pre>
+
+<pre><code>## [1] 0.8145251
+</code></pre>
+
+<p>--------------------------------------------Lasso Regression-----------------------------------------------------</p>
+
+<pre><code class="r">lasso_mod = glmnet(x_train, 
+                   y_train, 
+                   alpha = 1, 
+                   lambda = lambda) # Fit lasso model on training data
+
+plot(lasso_mod) 
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-136-1.png" alt="plot of chunk unnamed-chunk-136"></p>
+
+<pre><code class="r">par(mfrow=c(1,2))
+plot(0,0,type=&#39;n&#39;,
+     ylim=range(lasso_mod$beta), ylab=expression(hat(beta)[lambda]),
+     xlim=log(range(lasso_mod$lambda)), xlab = expression(paste(&#39;log(&#39;,lambda,&#39;)&#39;)),
+     main = &#39;Shrinkage of Coefficients&#39;
+)
+for(i in 1:nrow(lasso_mod$beta)){
+  lines(log(lambda),lasso_mod$beta[i,],col=i)
+}
+
+# Plot in-sample MSE by lambda
+MSE = lasso_mod$lambda * 0 # Initialize
+
+for(i in 1:ncol(lasso_mod$beta)){
+  MSE[i] = mean((y_train - lasso_mod$a0[i] - x_train%*%lasso_mod$beta[,i])^2)
+}
+plot(log(lasso_mod$lambda), MSE, type = &#39;l&#39;, col=&#39;blue&#39;, main = &#39;In-sample MSE&#39;, 
+     ylab= &quot;MSE&quot;, xlab = expression(paste(&#39;log(&#39;,lambda,&#39;)&#39;)))
+abline(v=log(lasso_mod$lambda[which.min(MSE)]),col=&#39;red&#39;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-137-1.png" alt="plot of chunk unnamed-chunk-137"></p>
+
+<pre><code class="r">pred &lt;- predict(lasso_mod, x_test)
+dim(pred)
+</code></pre>
+
+<pre><code>## [1] 10807   100
+</code></pre>
+
+<pre><code class="r">mse &lt;- sqrt( apply((y_test-pred)^2, 2, mean) )
+plot(log(lasso_mod$lambda), mse, type=&quot;b&quot;, xlab=&quot;Log(lambda)&quot;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-139-1.png" alt="plot of chunk unnamed-chunk-139"></p>
+
+<pre><code class="r">lam.best &lt;- lasso_mod$lambda[order(mse)[1]]
+lam.best
+</code></pre>
+
+<pre><code>## [1] 0.01
+</code></pre>
+
+<pre><code class="r">coef(lasso_mod, s=lam.best)
+</code></pre>
+
+<pre><code>## 483 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                     1
+## (Intercept)              -0.165536294
+## sqft_living               0.331946937
+## zipcode98002             -0.286645322
+## zipcode98003             -0.312626142
+## zipcode98004              1.500294517
+## zipcode98005              0.337437463
+## zipcode98006              0.286535043
+## zipcode98007              0.167164543
+## zipcode98008              0.166836565
+## zipcode98010             -0.054593348
+## zipcode98011              .          
+## zipcode98014              .          
+## zipcode98019             -0.006716559
+## zipcode98022             -0.273543973
+## zipcode98023             -0.426649207
+## zipcode98024              .          
+## zipcode98027              .          
+## zipcode98028              .          
+## zipcode98029              0.123992338
+## zipcode98030             -0.272324004
+## zipcode98031             -0.247811650
+## zipcode98032             -0.271659277
+## zipcode98033              0.524802497
+## zipcode98034              0.089610338
+## zipcode98038             -0.205252474
+## zipcode98039              2.690090416
+## zipcode98040              0.888025086
+## zipcode98042             -0.276883644
+## zipcode98045             -0.015985706
+## zipcode98052              0.220865519
+## zipcode98053              0.152554079
+## zipcode98055             -0.184698474
+## zipcode98056             -0.078202991
+## zipcode98058             -0.240575825
+## zipcode98059             -0.079622354
+## zipcode98065             -0.006803835
+## zipcode98070             -0.141990765
+## zipcode98072              .          
+## zipcode98074              0.049491835
+## zipcode98075              0.037454564
+## zipcode98077              .          
+## zipcode98092             -0.346685470
+## zipcode98102              0.648278100
+## zipcode98103              0.408784934
+## zipcode98105              0.767045584
+## zipcode98106             -0.016575770
+## zipcode98107              0.401948063
+## zipcode98108             -0.014773950
+## zipcode98109              0.778291098
+## zipcode98112              1.143921540
+## zipcode98115              0.398516469
+## zipcode98116              0.274054266
+## zipcode98117              0.362352860
+## zipcode98118              .          
+## zipcode98119              0.771858885
+## zipcode98122              0.431047522
+## zipcode98125              0.061456852
+## zipcode98126              0.006664942
+## zipcode98133              .          
+## zipcode98136              0.125630745
+## zipcode98144              0.256435772
+## zipcode98146             -0.078031168
+## zipcode98148             -0.009258143
+## zipcode98155              .          
+## zipcode98166             -0.139115622
+## zipcode98168             -0.186907781
+## zipcode98177              0.148195626
+## zipcode98178             -0.236516562
+## zipcode98188             -0.219566579
+## zipcode98198             -0.274224750
+## zipcode98199              0.632279404
+## waterfront1               1.094973328
+## view1                     0.159584949
+## view2                     0.169626239
+## view3                     0.362990985
+## view4                     0.934196360
+## yr_built                 -0.040162355
+## sqft_above                0.050859432
+## grade3                    .          
+## grade4                    .          
+## grade5                   -0.119677026
+## grade6                   -0.133710723
+## grade7                   -0.099949281
+## grade8                    .          
+## grade9                    0.212136605
+## grade10                   0.555451072
+## grade11                   1.065108178
+## grade12                   1.883261384
+## grade13                   3.524809663
+## condition2                .          
+## condition3               -0.040142974
+## condition4                .          
+## condition5                0.104162533
+## bedrooms0:bathrooms0      .          
+## bedrooms1:bathrooms0      .          
+## bedrooms2:bathrooms0      .          
+## bedrooms3:bathrooms0      .          
+## bedrooms4:bathrooms0      .          
+## bedrooms5:bathrooms0      .          
+## bedrooms6:bathrooms0      .          
+## bedrooms7:bathrooms0      .          
+## bedrooms8:bathrooms0      .          
+## bedrooms9:bathrooms0      .          
+## bedrooms10:bathrooms0     .          
+## bedrooms11:bathrooms0     .          
+## bedrooms33:bathrooms0     .          
+## bedrooms0:bathrooms0.5    .          
+## bedrooms1:bathrooms0.5    .          
+## bedrooms2:bathrooms0.5    .          
+## bedrooms3:bathrooms0.5    .          
+## bedrooms4:bathrooms0.5    .          
+## bedrooms5:bathrooms0.5    .          
+## bedrooms6:bathrooms0.5    .          
+## bedrooms7:bathrooms0.5    .          
+## bedrooms8:bathrooms0.5    .          
+## bedrooms9:bathrooms0.5    .          
+## bedrooms10:bathrooms0.5   .          
+## bedrooms11:bathrooms0.5   .          
+## bedrooms33:bathrooms0.5   .          
+## bedrooms0:bathrooms0.75   .          
+## bedrooms1:bathrooms0.75   .          
+## bedrooms2:bathrooms0.75   .          
+## bedrooms3:bathrooms0.75   .          
+## bedrooms4:bathrooms0.75  -0.225514572
+## bedrooms5:bathrooms0.75   .          
+## bedrooms6:bathrooms0.75   .          
+## bedrooms7:bathrooms0.75   .          
+## bedrooms8:bathrooms0.75   .          
+## bedrooms9:bathrooms0.75   .          
+## bedrooms10:bathrooms0.75  .          
+## bedrooms11:bathrooms0.75  .          
+## bedrooms33:bathrooms0.75  .          
+## bedrooms0:bathrooms1      .          
+## bedrooms1:bathrooms1      .          
+## bedrooms2:bathrooms1      .          
+## bedrooms3:bathrooms1      .          
+## bedrooms4:bathrooms1      .          
+## bedrooms5:bathrooms1      .          
+## bedrooms6:bathrooms1      .          
+## bedrooms7:bathrooms1      .          
+## bedrooms8:bathrooms1      .          
+## bedrooms9:bathrooms1      .          
+## bedrooms10:bathrooms1     .          
+## bedrooms11:bathrooms1     .          
+## bedrooms33:bathrooms1     .          
+## bedrooms0:bathrooms1.25   .          
+## bedrooms1:bathrooms1.25   .          
+## bedrooms2:bathrooms1.25   .          
+## bedrooms3:bathrooms1.25   .          
+## bedrooms4:bathrooms1.25   .          
+## bedrooms5:bathrooms1.25   .          
+## bedrooms6:bathrooms1.25   .          
+## bedrooms7:bathrooms1.25   .          
+## bedrooms8:bathrooms1.25   .          
+## bedrooms9:bathrooms1.25   .          
+## bedrooms10:bathrooms1.25  .          
+## bedrooms11:bathrooms1.25  .          
+## bedrooms33:bathrooms1.25  .          
+## bedrooms0:bathrooms1.5    .          
+## bedrooms1:bathrooms1.5    .          
+## bedrooms2:bathrooms1.5    .          
+## bedrooms3:bathrooms1.5    .          
+## bedrooms4:bathrooms1.5    .          
+## bedrooms5:bathrooms1.5    .          
+## bedrooms6:bathrooms1.5    .          
+## bedrooms7:bathrooms1.5    .          
+## bedrooms8:bathrooms1.5    .          
+## bedrooms9:bathrooms1.5    .          
+## bedrooms10:bathrooms1.5   .          
+## bedrooms11:bathrooms1.5   .          
+## bedrooms33:bathrooms1.5   .          
+## bedrooms0:bathrooms1.75   .          
+## bedrooms1:bathrooms1.75   .          
+## bedrooms2:bathrooms1.75   .          
+## bedrooms3:bathrooms1.75   .          
+## bedrooms4:bathrooms1.75  -0.010445772
+## bedrooms5:bathrooms1.75   .          
+## bedrooms6:bathrooms1.75   .          
+## bedrooms7:bathrooms1.75   .          
+## bedrooms8:bathrooms1.75   .          
+## bedrooms9:bathrooms1.75   .          
+## bedrooms10:bathrooms1.75  .          
+## bedrooms11:bathrooms1.75  .          
+## bedrooms33:bathrooms1.75  .          
+## bedrooms0:bathrooms2      .          
+## bedrooms1:bathrooms2      .          
+## bedrooms2:bathrooms2      .          
+## bedrooms3:bathrooms2      .          
+## bedrooms4:bathrooms2     -0.010575849
+## bedrooms5:bathrooms2      .          
+## bedrooms6:bathrooms2      .          
+## bedrooms7:bathrooms2      .          
+## bedrooms8:bathrooms2      .          
+## bedrooms9:bathrooms2      .          
+## bedrooms10:bathrooms2     .          
+## bedrooms11:bathrooms2     .          
+## bedrooms33:bathrooms2     .          
+## bedrooms0:bathrooms2.25   .          
+## bedrooms1:bathrooms2.25   .          
+## bedrooms2:bathrooms2.25   .          
+## bedrooms3:bathrooms2.25   .          
+## bedrooms4:bathrooms2.25   .          
+## bedrooms5:bathrooms2.25   .          
+## bedrooms6:bathrooms2.25   .          
+## bedrooms7:bathrooms2.25   .          
+## bedrooms8:bathrooms2.25   .          
+## bedrooms9:bathrooms2.25   .          
+## bedrooms10:bathrooms2.25  .          
+## bedrooms11:bathrooms2.25  .          
+## bedrooms33:bathrooms2.25  .          
+## bedrooms0:bathrooms2.5    .          
+## bedrooms1:bathrooms2.5    .          
+## bedrooms2:bathrooms2.5    .          
+## bedrooms3:bathrooms2.5    .          
+## bedrooms4:bathrooms2.5   -0.029356922
+## bedrooms5:bathrooms2.5   -0.041218479
+## bedrooms6:bathrooms2.5    .          
+## bedrooms7:bathrooms2.5    .          
+## bedrooms8:bathrooms2.5    .          
+## bedrooms9:bathrooms2.5    .          
+## bedrooms10:bathrooms2.5   .          
+## bedrooms11:bathrooms2.5   .          
+## bedrooms33:bathrooms2.5   .          
+## bedrooms0:bathrooms2.75   .          
+## bedrooms1:bathrooms2.75   .          
+## bedrooms2:bathrooms2.75   .          
+## bedrooms3:bathrooms2.75   .          
+## bedrooms4:bathrooms2.75   .          
+## bedrooms5:bathrooms2.75   .          
+## bedrooms6:bathrooms2.75   .          
+## bedrooms7:bathrooms2.75   .          
+## bedrooms8:bathrooms2.75   .          
+## bedrooms9:bathrooms2.75   .          
+## bedrooms10:bathrooms2.75  .          
+## bedrooms11:bathrooms2.75  .          
+## bedrooms33:bathrooms2.75  .          
+## bedrooms0:bathrooms3      .          
+## bedrooms1:bathrooms3      .          
+## bedrooms2:bathrooms3      .          
+## bedrooms3:bathrooms3      .          
+## bedrooms4:bathrooms3      .          
+## bedrooms5:bathrooms3      .          
+## bedrooms6:bathrooms3      .          
+## bedrooms7:bathrooms3      .          
+## bedrooms8:bathrooms3      .          
+## bedrooms9:bathrooms3      .          
+## bedrooms10:bathrooms3     .          
+## bedrooms11:bathrooms3     .          
+## bedrooms33:bathrooms3     .          
+## bedrooms0:bathrooms3.25   .          
+## bedrooms1:bathrooms3.25   .          
+## bedrooms2:bathrooms3.25   .          
+## bedrooms3:bathrooms3.25   .          
+## bedrooms4:bathrooms3.25   0.179169539
+## bedrooms5:bathrooms3.25   0.055248786
+## bedrooms6:bathrooms3.25   .          
+## bedrooms7:bathrooms3.25   .          
+## bedrooms8:bathrooms3.25   .          
+## bedrooms9:bathrooms3.25   .          
+## bedrooms10:bathrooms3.25  .          
+## bedrooms11:bathrooms3.25  .          
+## bedrooms33:bathrooms3.25  .          
+## bedrooms0:bathrooms3.5    .          
+## bedrooms1:bathrooms3.5    .          
+## bedrooms2:bathrooms3.5    .          
+## bedrooms3:bathrooms3.5    .          
+## bedrooms4:bathrooms3.5    .          
+## bedrooms5:bathrooms3.5    .          
+## bedrooms6:bathrooms3.5    .          
+## bedrooms7:bathrooms3.5    .          
+## bedrooms8:bathrooms3.5    .          
+## bedrooms9:bathrooms3.5    .          
+## bedrooms10:bathrooms3.5   .          
+## bedrooms11:bathrooms3.5   .          
+## bedrooms33:bathrooms3.5   .          
+## bedrooms0:bathrooms3.75   .          
+## bedrooms1:bathrooms3.75   .          
+## bedrooms2:bathrooms3.75   .          
+## bedrooms3:bathrooms3.75   .          
+## bedrooms4:bathrooms3.75   0.232831678
+## bedrooms5:bathrooms3.75   .          
+## bedrooms6:bathrooms3.75   .          
+## bedrooms7:bathrooms3.75   .          
+## bedrooms8:bathrooms3.75   .          
+## bedrooms9:bathrooms3.75   .          
+## bedrooms10:bathrooms3.75  .          
+## bedrooms11:bathrooms3.75  .          
+## bedrooms33:bathrooms3.75  .          
+## bedrooms0:bathrooms4      .          
+## bedrooms1:bathrooms4      .          
+## bedrooms2:bathrooms4      .          
+## bedrooms3:bathrooms4      .          
+## bedrooms4:bathrooms4      0.090909148
+## bedrooms5:bathrooms4      .          
+## bedrooms6:bathrooms4      .          
+## bedrooms7:bathrooms4      .          
+## bedrooms8:bathrooms4      .          
+## bedrooms9:bathrooms4      .          
+## bedrooms10:bathrooms4     .          
+## bedrooms11:bathrooms4     .          
+## bedrooms33:bathrooms4     .          
+## bedrooms0:bathrooms4.25   .          
+## bedrooms1:bathrooms4.25   .          
+## bedrooms2:bathrooms4.25   .          
+## bedrooms3:bathrooms4.25   0.423938612
+## bedrooms4:bathrooms4.25   0.285977725
+## bedrooms5:bathrooms4.25   .          
+## bedrooms6:bathrooms4.25   .          
+## bedrooms7:bathrooms4.25   .          
+## bedrooms8:bathrooms4.25   .          
+## bedrooms9:bathrooms4.25   .          
+## bedrooms10:bathrooms4.25  .          
+## bedrooms11:bathrooms4.25  .          
+## bedrooms33:bathrooms4.25  .          
+## bedrooms0:bathrooms4.5    .          
+## bedrooms1:bathrooms4.5    .          
+## bedrooms2:bathrooms4.5    .          
+## bedrooms3:bathrooms4.5    0.560720789
+## bedrooms4:bathrooms4.5    .          
+## bedrooms5:bathrooms4.5    .          
+## bedrooms6:bathrooms4.5    .          
+## bedrooms7:bathrooms4.5    .          
+## bedrooms8:bathrooms4.5    .          
+## bedrooms9:bathrooms4.5    .          
+## bedrooms10:bathrooms4.5   .          
+## bedrooms11:bathrooms4.5   .          
+## bedrooms33:bathrooms4.5   .          
+## bedrooms0:bathrooms4.75   .          
+## bedrooms1:bathrooms4.75   .          
+## bedrooms2:bathrooms4.75   .          
+## bedrooms3:bathrooms4.75   .          
+## bedrooms4:bathrooms4.75   0.685523338
+## bedrooms5:bathrooms4.75   0.885684446
+## bedrooms6:bathrooms4.75   .          
+## bedrooms7:bathrooms4.75   .          
+## bedrooms8:bathrooms4.75   .          
+## bedrooms9:bathrooms4.75   .          
+## bedrooms10:bathrooms4.75  .          
+## bedrooms11:bathrooms4.75  .          
+## bedrooms33:bathrooms4.75  .          
+## bedrooms0:bathrooms5      .          
+## bedrooms1:bathrooms5      .          
+## bedrooms2:bathrooms5      .          
+## bedrooms3:bathrooms5      .          
+## bedrooms4:bathrooms5      0.172542634
+## bedrooms5:bathrooms5      0.427944804
+## bedrooms6:bathrooms5      .          
+## bedrooms7:bathrooms5      .          
+## bedrooms8:bathrooms5      .          
+## bedrooms9:bathrooms5      .          
+## bedrooms10:bathrooms5     .          
+## bedrooms11:bathrooms5     .          
+## bedrooms33:bathrooms5     .          
+## bedrooms0:bathrooms5.25   .          
+## bedrooms1:bathrooms5.25   .          
+## bedrooms2:bathrooms5.25   .          
+## bedrooms3:bathrooms5.25   .          
+## bedrooms4:bathrooms5.25   .          
+## bedrooms5:bathrooms5.25   2.571595757
+## bedrooms6:bathrooms5.25   .          
+## bedrooms7:bathrooms5.25   .          
+## bedrooms8:bathrooms5.25   .          
+## bedrooms9:bathrooms5.25   .          
+## bedrooms10:bathrooms5.25  .          
+## bedrooms11:bathrooms5.25  .          
+## bedrooms33:bathrooms5.25  .          
+## bedrooms0:bathrooms5.5    .          
+## bedrooms1:bathrooms5.5    .          
+## bedrooms2:bathrooms5.5    .          
+## bedrooms3:bathrooms5.5    .          
+## bedrooms4:bathrooms5.5    .          
+## bedrooms5:bathrooms5.5    .          
+## bedrooms6:bathrooms5.5    .          
+## bedrooms7:bathrooms5.5    .          
+## bedrooms8:bathrooms5.5    .          
+## bedrooms9:bathrooms5.5    .          
+## bedrooms10:bathrooms5.5   .          
+## bedrooms11:bathrooms5.5   .          
+## bedrooms33:bathrooms5.5   .          
+## bedrooms0:bathrooms5.75   .          
+## bedrooms1:bathrooms5.75   .          
+## bedrooms2:bathrooms5.75   .          
+## bedrooms3:bathrooms5.75   .          
+## bedrooms4:bathrooms5.75  -0.002001532
+## bedrooms5:bathrooms5.75   3.848724894
+## bedrooms6:bathrooms5.75   .          
+## bedrooms7:bathrooms5.75   .          
+## bedrooms8:bathrooms5.75   .          
+## bedrooms9:bathrooms5.75   .          
+## bedrooms10:bathrooms5.75  .          
+## bedrooms11:bathrooms5.75  .          
+## bedrooms33:bathrooms5.75  .          
+## bedrooms0:bathrooms6      .          
+## bedrooms1:bathrooms6      .          
+## bedrooms2:bathrooms6      .          
+## bedrooms3:bathrooms6      .          
+## bedrooms4:bathrooms6      .          
+## bedrooms5:bathrooms6     -2.877625508
+## bedrooms6:bathrooms6      5.201792184
+## bedrooms7:bathrooms6      .          
+## bedrooms8:bathrooms6      .          
+## bedrooms9:bathrooms6      .          
+## bedrooms10:bathrooms6     .          
+## bedrooms11:bathrooms6     .          
+## bedrooms33:bathrooms6     .          
+## bedrooms0:bathrooms6.25   .          
+## bedrooms1:bathrooms6.25   .          
+## bedrooms2:bathrooms6.25   .          
+## bedrooms3:bathrooms6.25   .          
+## bedrooms4:bathrooms6.25   .          
+## bedrooms5:bathrooms6.25   0.875407138
+## bedrooms6:bathrooms6.25   .          
+## bedrooms7:bathrooms6.25   .          
+## bedrooms8:bathrooms6.25   .          
+## bedrooms9:bathrooms6.25   .          
+## bedrooms10:bathrooms6.25  .          
+## bedrooms11:bathrooms6.25  .          
+## bedrooms33:bathrooms6.25  .          
+## bedrooms0:bathrooms6.5    .          
+## bedrooms1:bathrooms6.5    .          
+## bedrooms2:bathrooms6.5    .          
+## bedrooms3:bathrooms6.5    .          
+## bedrooms4:bathrooms6.5    .          
+## bedrooms5:bathrooms6.5    .          
+## bedrooms6:bathrooms6.5    .          
+## bedrooms7:bathrooms6.5    .          
+## bedrooms8:bathrooms6.5    .          
+## bedrooms9:bathrooms6.5    .          
+## bedrooms10:bathrooms6.5   .          
+## bedrooms11:bathrooms6.5   .          
+## bedrooms33:bathrooms6.5   .          
+## bedrooms0:bathrooms6.75   .          
+## bedrooms1:bathrooms6.75   .          
+## bedrooms2:bathrooms6.75   .          
+## bedrooms3:bathrooms6.75   .          
+## bedrooms4:bathrooms6.75   .          
+## bedrooms5:bathrooms6.75   .          
+## bedrooms6:bathrooms6.75   .          
+## bedrooms7:bathrooms6.75  -1.321016510
+## bedrooms8:bathrooms6.75   .          
+## bedrooms9:bathrooms6.75   .          
+## bedrooms10:bathrooms6.75  .          
+## bedrooms11:bathrooms6.75  .          
+## bedrooms33:bathrooms6.75  .          
+## bedrooms0:bathrooms7.5    .          
+## bedrooms1:bathrooms7.5    .          
+## bedrooms2:bathrooms7.5    .          
+## bedrooms3:bathrooms7.5    .          
+## bedrooms4:bathrooms7.5    .          
+## bedrooms5:bathrooms7.5    .          
+## bedrooms6:bathrooms7.5    .          
+## bedrooms7:bathrooms7.5    .          
+## bedrooms8:bathrooms7.5    .          
+## bedrooms9:bathrooms7.5    .          
+## bedrooms10:bathrooms7.5   .          
+## bedrooms11:bathrooms7.5   .          
+## bedrooms33:bathrooms7.5   .          
+## bedrooms0:bathrooms7.75   .          
+## bedrooms1:bathrooms7.75   .          
+## bedrooms2:bathrooms7.75   .          
+## bedrooms3:bathrooms7.75   .          
+## bedrooms4:bathrooms7.75   .          
+## bedrooms5:bathrooms7.75   .          
+## bedrooms6:bathrooms7.75   6.083639588
+## bedrooms7:bathrooms7.75   .          
+## bedrooms8:bathrooms7.75   .          
+## bedrooms9:bathrooms7.75   .          
+## bedrooms10:bathrooms7.75  .          
+## bedrooms11:bathrooms7.75  .          
+## bedrooms33:bathrooms7.75  .          
+## bedrooms0:bathrooms8      .          
+## bedrooms1:bathrooms8      .          
+## bedrooms2:bathrooms8      .          
+## bedrooms3:bathrooms8      .          
+## bedrooms4:bathrooms8      .          
+## bedrooms5:bathrooms8      .          
+## bedrooms6:bathrooms8      9.989163186
+## bedrooms7:bathrooms8     -1.557383687
+## bedrooms8:bathrooms8      .          
+## bedrooms9:bathrooms8      .          
+## bedrooms10:bathrooms8     .          
+## bedrooms11:bathrooms8     .          
+## bedrooms33:bathrooms8     .
+</code></pre>
+
+<pre><code class="r">y_predicted &lt;- predict(lasso_mod, s = lam.best, newx = x_test)
+
+# Sum of Squares Total and Error
+sst &lt;- sum((y_test - mean(y_test))^2)
+sse &lt;- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq &lt;- 1 - sse / sst
+rsq
+</code></pre>
+
+<pre><code>## [1] 0.8108091
+</code></pre>
+
+<blockquote>
+<p>Compare your top 10 model from HW 2 with the Lasso model. Are there any variables that are removed from both models?
+Solution: yr_built+bedrooms are removed from both the models making my efficency more than what was predicted in HW2</p>
+
+<p>4.Which model of these 3 would you choose and why? (Hint: Compare the 3 models against test data that it has not seen to compare performance)
+Solution: I would choose ridge regression model because my r square value in the model is 0.81 where as in linear its at 0.78 and in lasso its 0.81. Hence the most efficent model would be the ridge regression model.</p>
+</blockquote>
+
+<hr>
+
+<p>-------------------------------------------- Part 2----------------------------------------------------------------</p>
+
+<pre><code class="r">library(datasets)
+data(iris)
+str(iris)
+</code></pre>
+
+<pre><code>## &#39;data.frame&#39;:    150 obs. of  5 variables:
+##  $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...
+##  $ Sepal.Width : num  3.5 3 3.2 3.1 3.6 3.9 3.4 3.4 2.9 3.1 ...
+##  $ Petal.Length: num  1.4 1.4 1.3 1.5 1.4 1.7 1.4 1.5 1.4 1.5 ...
+##  $ Petal.Width : num  0.2 0.2 0.2 0.2 0.2 0.4 0.3 0.2 0.2 0.1 ...
+##  $ Species     : Factor w/ 3 levels &quot;setosa&quot;,&quot;versicolor&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
+</code></pre>
+
+<pre><code class="r">table(iris$Species)
+</code></pre>
+
+<pre><code>## 
+##     setosa versicolor  virginica 
+##         50         50         50
+</code></pre>
+
+<pre><code class="r">head(iris)
+</code></pre>
+
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+## 4          4.6         3.1          1.5         0.2  setosa
+## 5          5.0         3.6          1.4         0.2  setosa
+## 6          5.4         3.9          1.7         0.4  setosa
+</code></pre>
+
+<pre><code class="r">set.seed(9850)
+#generate random number from uniform distribution for 150 observations
+gp &lt;- runif(nrow(iris))
+ir &lt;- iris[order(gp),]
+head(ir,10)
+</code></pre>
+
+<pre><code>##     Sepal.Length Sepal.Width Petal.Length Petal.Width    Species
+## 103          7.1         3.0          5.9         2.1  virginica
+## 20           5.1         3.8          1.5         0.3     setosa
+## 63           6.0         2.2          4.0         1.0 versicolor
+## 17           5.4         3.9          1.3         0.4     setosa
+## 83           5.8         2.7          3.9         1.2 versicolor
+## 53           6.9         3.1          4.9         1.5 versicolor
+## 118          7.7         3.8          6.7         2.2  virginica
+## 91           5.5         2.6          4.4         1.2 versicolor
+## 80           5.7         2.6          3.5         1.0 versicolor
+## 43           4.4         3.2          1.3         0.2     setosa
+</code></pre>
+
+<pre><code class="r">#scaling 
+normalize &lt;- function(x) {
+  return ((x - min(x) / max(x) - min(x)))
+
+}
+irs &lt;- as.data.frame(lapply(ir[,c(1,2,3,4)],normalize))
+summary(irs)
+</code></pre>
+
+<pre><code>##   Sepal.Length      Sepal.Width       Petal.Length      Petal.Width    
+##  Min.   :-0.5443   Min.   :-0.4545   Min.   :-0.1449   Min.   :-0.040  
+##  1st Qu.: 0.2557   1st Qu.: 0.3455   1st Qu.: 0.4551   1st Qu.: 0.160  
+##  Median : 0.9557   Median : 0.5455   Median : 3.2051   Median : 1.160  
+##  Mean   : 0.9990   Mean   : 0.6028   Mean   : 2.6131   Mean   : 1.059  
+##  3rd Qu.: 1.5557   3rd Qu.: 0.8455   3rd Qu.: 3.9551   3rd Qu.: 1.660  
+##  Max.   : 3.0557   Max.   : 1.9455   Max.   : 5.7551   Max.   : 2.360
+</code></pre>
+
+<pre><code class="r">#test &amp; train set 
+train &lt;- irs[1:129,]
+test &lt;- irs[130:150,]
+train1 &lt;- ir[1:129, 5]
+test1&lt;- ir[130:150, 5]
+</code></pre>
+
+<pre><code class="r">library(class)
+sqrt(150)
+</code></pre>
+
+<pre><code>## [1] 12.24745
+</code></pre>
+
+<pre><code class="r">#Choose K in odd, so taken K =13
+knn_ml &lt;- knn(train = train, test = test, cl= train1, k=13) 
+knn_ml
+</code></pre>
+
+<pre><code>##  [1] versicolor setosa     virginica  virginica  virginica  setosa    
+##  [7] virginica  versicolor virginica  setosa     setosa     virginica 
+## [13] setosa     virginica  virginica  virginica  setosa     virginica 
+## [19] virginica  versicolor setosa    
+## Levels: setosa versicolor virginica
+</code></pre>
+
+<pre><code class="r">table(test1,knn_ml)
+</code></pre>
+
+<pre><code>##             knn_ml
+## test1        setosa versicolor virginica
+##   setosa          7          0         0
+##   versicolor      0          3         2
+##   virginica       0          0         9
+</code></pre>
+
+<pre><code class="r">accuracy = mean(knn_ml == test1)
+accuracy
+</code></pre>
+
+<pre><code>## [1] 0.9047619
+</code></pre>
+
+<blockquote>
+<h1>model is 90.47% acurate.</h1>
+
+<p>PCA</p>
+</blockquote>
+
+<pre><code class="r">data(iris)
+head(iris, 3)
+</code></pre>
+
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+</code></pre>
+
+<pre><code class="r"># log transform 
+log.ir &lt;- log(iris[, 1:4])
+ir.species &lt;- iris[, 5]
+</code></pre>
+
+<pre><code class="r">#Center and scale the data
+ir.pca &lt;- prcomp(log.ir,center = TRUE, scale. = TRUE) 
+
+Cov_data &lt;- cov(log.ir )
+Eigen_data &lt;- eigen(Cov_data)
+Eigen_data$values
+</code></pre>
+
+<pre><code>## [1] 1.314598414 0.019141453 0.018294581 0.002895452
+</code></pre>
+
+<pre><code class="r">Eigen_data$vectors
+</code></pre>
+
+<pre><code>##             [,1]          [,2]       [,3]        [,4]
+## [1,]  0.10090019 -0.0008537483 -0.4891583  0.86633858
+## [2,] -0.05759298  0.5745110809 -0.7140592 -0.39590340
+## [3,]  0.50527032 -0.6870939247 -0.4269180 -0.30057416
+## [4,]  0.85510473  0.4447900940  0.2618865  0.04871476
+</code></pre>
+
+<pre><code class="r"># print method
+print(ir.pca)
+</code></pre>
+
+<pre><code>## Standard deviations (1, .., p=4):
+## [1] 1.7124583 0.9523797 0.3647029 0.1656840
+## 
+## Rotation (n x k) = (4 x 4):
+##                     PC1         PC2        PC3         PC4
+## Sepal.Length  0.5038236 -0.45499872  0.7088547  0.19147575
+## Sepal.Width  -0.3023682 -0.88914419 -0.3311628 -0.09125405
+## Petal.Length  0.5767881 -0.03378802 -0.2192793 -0.78618732
+## Petal.Width   0.5674952 -0.03545628 -0.5829003  0.58044745
+</code></pre>
+
+<pre><code class="r"># plot method
+plot(ir.pca, type = &quot;l&quot;)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-153-1.png" alt="plot of chunk unnamed-chunk-153"></p>
+
+<pre><code class="r"># summary method
+summary(ir.pca)
+</code></pre>
+
+<pre><code>## Importance of components%s:
+##                           PC1    PC2     PC3     PC4
+## Standard deviation     1.7125 0.9524 0.36470 0.16568
+## Proportion of Variance 0.7331 0.2268 0.03325 0.00686
+## Cumulative Proportion  0.7331 0.9599 0.99314 1.00000
+</code></pre>
+
+<pre><code class="r"># Predict PCs
+predict(ir.pca, newdata=tail(log.ir, 2))
+</code></pre>
+
+<pre><code>##           PC1         PC2        PC3         PC4
+## 149 1.0809930 -1.01155751 -0.7082289 -0.06811063
+## 150 0.9712116 -0.06158655 -0.5008674 -0.12411524
+</code></pre>
+
+<blockquote>
+<p>The first eigenvalue (1.31) is much larger than the second (0.019), and so on…. The highest eigenvalues correspond to the first data principal components.  </p>
+</blockquote>
+
+<pre><code class="r">library(devtools)
+
+
+library(ggbiplot)
+g &lt;- ggbiplot(ir.pca, obs.scale = 1, var.scale = 1, 
+              groups = ir.species, ellipse = TRUE, 
+              circle = TRUE)
+g &lt;- g + scale_color_discrete(name = &#39;&#39;)
+g &lt;- g + theme(legend.direction = &#39;horizontal&#39;, 
+               legend.position = &#39;top&#39;)
+print(g)
+</code></pre>
+
+<p><img src="figure/unnamed-chunk-154-1.png" alt="plot of chunk unnamed-chunk-154"></p>
+
+<hr>
+
+<blockquote>
+<p>3.Re-run your model from part 1) on the dimensionally reduced dataset. What is the accuracy loss (if any) on this new model versus the model from part 1)</p>
+</blockquote>
+
+<hr>
+
+<pre><code class="r">#computing the new dataset 
+# Transpose eigeinvectors
+Eigen_data_t &lt;- t(Eigen_data$vectors)
+# Transpose the adjusted data
+iris_n_t &lt;- t(irs)
+# The new dataset
+irsn &lt;- Eigen_data_t %*% iris_n_t
+# Transpose new data ad rename columns
+irsn &lt;- t(irsn)
+colnames(irsn) &lt;- c(&quot;PC1&quot;, &quot;PC2&quot;, &quot;PC3&quot;, &quot;PC4&quot;)
+head(irsn)
+</code></pre>
+
+<pre><code>##            PC1        PC2       PC3         PC4
+## [1,] 4.2747881 -2.0839489 -3.009608  0.40447834
+## [2,] 0.2645354  0.5999585 -1.195495 -0.41008179
+## [3,] 2.3092434 -1.7264093 -1.377217  0.28573329
+## [4,] 0.2735026  0.8390513 -1.302076 -0.12478425
+## [5,] 2.3807608 -1.2813156 -1.541346 -0.04568575
+## [6,] 3.2305156 -1.6061072 -2.713396  0.46296559
+</code></pre>
+
+<pre><code class="r">train2 &lt;- irsn[1:130,]
+test2 &lt;- irsn[131:150,]
+train3 &lt;- ir[1:130,5]
+test3 &lt;- ir[131:150,5]
+
+
+require(class)
+model &lt;- knn(train= train2,test=test2, cl= train3 ,k=13)
+</code></pre>
+
+<pre><code class="r">table(test3,model)
+</code></pre>
+
+<pre><code>##             model
+## test3        setosa versicolor virginica
+##   setosa          7          0         0
+##   versicolor      0          2         2
+##   virginica       0          0         9
+</code></pre>
+
+<pre><code class="r">accuracy= mean( model == test3)
+accuracy
+</code></pre>
+
+<pre><code>## [1] 0.9
+</code></pre>
+
+<blockquote>
+<p>Since the model is only 90% acurate whereas previously it was 90.47% accurates shows that after PCA the efficency of classifing by KNN has decreased.</p>
+</blockquote>
+
+</body>
+
+</html>
