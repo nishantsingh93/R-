@@ -1,55 +1,90 @@
 # Project Title
+**DataSet Source:**  https://www.kaggle.com/harlfoxem/housesalesprediction/data
+This dataset contains house sale prices for <b>King County</b>, which includes Seattle. It includes homes sold between May 2014 and May 2015.It's a great dataset for evaluating simple regression models.
+About the Data Set:
+id - Unique ID for each home sold 
 
-One Paragraph of project description goes here
+date - Date of the home sale 
+
+price - Price of each home sold 
+
+bedrooms - Number of bedrooms 
+
+bathrooms - Number of bathrooms, where .5 accounts for a room with a toilet but no shower 
+
+sqft_living - Square footage of the apartments interior living space 
+
+sqft_lot - Square footage of the land space 
+
+floors - Number of floors 
+
+waterfront - A dummy variable for whether the apartment was overlooking the waterfront or not 
+
+view - An index from 0 to 4 of how good the view of the property was 
+
+condition - An index from 1 to 5 on the condition of the apartment, 
+
+grade - An index from 1 to 13, where 1-3 falls short of building construction and design, 7 has an average level of construction and design, and 11-13 have a high quality level of construction and design. 
+
+sqft_above - The square footage of the interior housing space that is above ground level 
+
+sqft_basement - The square footage of the interior housing space that is below ground level 
+
+yr_built - The year the house was initially built 
+
+yr_renovated - The year of the house’s last renovation 
+
+zipcode - What zipcode area the house is in 
+
+lat - Lattitude 
+
+long - Longitude 
+
+sqft_living15 - The square footage of interior housing living space for the nearest 15 neighbors 
+
+sqft_lot15 - The square footage of the land lots of the nearest 15 neighbors 
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+First, we carry out an exploratory analysis of the data.Next we compute a few new values from the variables in the data set. For instance, we’re interested in finding out siginficant predictors in predicting price. First we do basic data wrangling and then try to null and full model to see reltionship. After this we continue with the data set to do linear models.
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+We need the following major libraries in R to work with the data set:
 
 ```
-Give examples
+library(lubridate)
+library(GGally)
+library(ggplot2)
+library(hydroGOF)
+library(mvtnorm)
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(DT)
+library(caret)
+library(leaflet)
+library(corrplot)
+library(boot)
 ```
 
-### Installing
 
-A step by step series of examples that tell you have to get a development env running
+## Running the queries
 
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
+Running the linear model with top 10 predictors
 
 ```
-until finished
+lm4<-lm(price~ ( grade + zipcode + sqft_living + waterfront + view + condition + 
+    year + yr_renovated + sqft_above + bedrooms:bathrooms ),data=df)
+summary(lm4)
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+ploting the tree
 
 ```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
+library(rpart)
+library(rpart.plot)
+regTree <- rpart(price ~ .+ sqft_living + zipcode + waterfront + view + yr_built+yr_renovated + bedrooms+bathrooms + sqft_above + condition +floors, data= df, method = "anova")
 ```
 
 ## Deployment
